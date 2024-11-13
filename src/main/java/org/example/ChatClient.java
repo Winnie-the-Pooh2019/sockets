@@ -9,20 +9,34 @@ public class ChatClient {
 
     public static void main(String[] args) {
         try (Socket socket = new Socket(HOST, PORT);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+             BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
              PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
              BufferedReader serverReader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
             System.out.println("Connected to the chat server");
+
+            // Read and set the username
+            System.out.print(serverReader.readLine() + " ");
+            String username = consoleReader.readLine();
+            writer.println(username);
+
+            // Thread to read messages from the server
+            new Thread(() -> {
+                String serverMessage;
+                try {
+                    while ((serverMessage = serverReader.readLine()) != null) {
+                        System.out.println(serverMessage);
+                    }
+                } catch (IOException ex) {
+                    System.out.println("Server connection closed: " + ex.getMessage());
+                }
+            }).start();
+
+            // Read user input and send messages to the server
             String userInput;
-
             do {
-                System.out.print("Enter message: ");
-                userInput = reader.readLine();
+                userInput = consoleReader.readLine();
                 writer.println(userInput);
-
-                String response = serverReader.readLine();
-                System.out.println("Server response: " + response);
             } while (!userInput.equalsIgnoreCase("bye"));
 
         } catch (UnknownHostException ex) {
