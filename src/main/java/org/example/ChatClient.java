@@ -37,7 +37,7 @@ public class ChatClient {
             do {
                 userInput = consoleReader.readLine();
                 writer.println(userInput);
-            } while (!userInput.equalsIgnoreCase("bye"));
+            } while (!userInput.equalsIgnoreCase("exit"));
 
         } catch (UnknownHostException ex) {
             System.out.println("Server not found: " + ex.getMessage());
