@@ -1,5 +1,8 @@
 package org.example;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -8,19 +11,20 @@ public class ChatServer {
     private static final int PORT = 12345;
     static Set<ClientHandler> clientHandlers = new HashSet<>();
 
+    private static final Logger logger = LoggerFactory.getLogger(ChatServer.class);
+
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            System.out.println("Server is listening on port " + PORT);
+            logger.info("Waiting for clients...");
             while (true) {
                 Socket socket = serverSocket.accept();
-                System.out.println("New client connected");
+                logger.info("Client connected");
                 ClientHandler clientHandler = new ClientHandler(socket);
                 clientHandlers.add(clientHandler);
                 clientHandler.start();
             }
         } catch (IOException ex) {
-            System.out.println("Server exception: " + ex.getMessage());
-            ex.printStackTrace();
+            logger.error("Server error {}", ex.getMessage());
         }
     }
 
@@ -47,6 +51,8 @@ class ClientHandler extends Thread {
     private PrintWriter writer;
     private String username;
 
+    private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
+
     public ClientHandler(Socket socket) {
         this.socket = socket;
     }
@@ -60,7 +66,7 @@ class ClientHandler extends Thread {
             this.writer = writer;
             writer.println("Enter your username:");
             this.username = reader.readLine();
-            System.out.println("Username: " + username);
+            logger.info("Client connected with username {}", username);
 
             String text;
             do {
@@ -69,8 +75,19 @@ class ClientHandler extends Thread {
                     int spaceIndex = text.indexOf(' ');
                     String recipient = text.substring(1, spaceIndex);
                     String message = text.substring(spaceIndex + 1);
+
+                    if (message.equals("null"))
+                        logger.warn("Null message received");
+
+                    logger.info("Message from {} to {}", username, recipient);
+
                     ChatServer.sendMessageToUser(message, recipient);
                 } else {
+                    logger.info("Broadcast message {} from {}", text, username);
+
+                    if (text.equals("null"))
+                        logger.warn("Null message received");
+
                     ChatServer.broadcast(username + ": " + text, this);
                 }
             } while (!text.equalsIgnoreCase("bye"));
