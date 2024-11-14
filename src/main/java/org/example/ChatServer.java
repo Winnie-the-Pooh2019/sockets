@@ -8,13 +8,14 @@ import java.net.*;
 import java.util.*;
 
 public class ChatServer {
-    private static final int PORT = 12345;
+    private static final ConfigReader configReader = ConfigReader.getInstance();
+
     static Set<ClientHandler> clientHandlers = new HashSet<>();
 
     private static final Logger logger = LoggerFactory.getLogger(ChatServer.class);
 
     public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+        try (ServerSocket serverSocket = new ServerSocket(configReader.getPort())) {
             logger.info("Waiting for clients...");
             while (true) {
                 Socket socket = serverSocket.accept();
@@ -47,7 +48,7 @@ public class ChatServer {
 }
 
 class ClientHandler extends Thread {
-    private Socket socket;
+    private final Socket socket;
     private PrintWriter writer;
     private String username;
 
@@ -90,14 +91,14 @@ class ClientHandler extends Thread {
 
                     ChatServer.broadcast(username + ": " + text, this);
                 }
-            } while (!text.equalsIgnoreCase("bye"));
+            } while (!text.equalsIgnoreCase("exit"));
 
             socket.close();
         } catch (IOException ex) {
             System.out.println("Server exception: " + ex.getMessage());
-            ex.printStackTrace();
         } finally {
             ChatServer.clientHandlers.remove(this);
+            logger.info("Client {} disconnected", username);
         }
     }
 
